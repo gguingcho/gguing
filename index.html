@@ -69,7 +69,7 @@
   header{
     max-width: 1080px;
     margin: 0 auto;
-    padding: 72px 28px 36px;
+    padding: 56px 28px 8px;
     position: relative;
     z-index: 1;
   }
@@ -115,12 +115,39 @@
     font-weight: 600;
     font-size: 13px;
     color: var(--pink);
-    margin-top: 20px;
     display: inline-block;
     background: #fff;
     padding: 6px 14px;
     border-radius: 999px;
     box-shadow: 0 4px 14px var(--shadow);
+  }
+
+  /* ---------- 캐릭터 섹션 제목 ---------- */
+  .section-title-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 8px 0 8px;
+  }
+  .section-title{
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: clamp(24px, 4vw, 32px);
+    color: var(--pink-deep);
+    margin: 0;
+    text-shadow: 1.5px 1.5px 0 #fff, 3px 3px 0 var(--pink-pale);
+  }
+  .section-title .sparkle{
+    display: inline-block;
+    animation: wiggle 2.4s ease-in-out infinite;
+  }
+  .section-desc{
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0 0 26px;
   }
 
   /* ---------- 카드 그리드 ---------- */
@@ -180,6 +207,12 @@
     flex-shrink: 0;
     border: 3px solid #fff;
     box-shadow: 0 4px 10px var(--shadow);
+    overflow: hidden;
+  }
+  .avatar img{
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .card-name{
     font-family: 'Baloo 2', sans-serif;
@@ -322,6 +355,80 @@
     border-radius: 24px;
     border: 3px dashed var(--pink-pale);
   }
+
+  /* ---------- 프로필 카드 ---------- */
+  .profile-wrap{
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 28px 8px;
+    position: relative;
+    z-index: 1;
+  }
+  .profile-card{
+    background: #fff;
+    border: 3px solid var(--pink-pale);
+    border-radius: 28px;
+    padding: 26px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 10px 0 -4px var(--pink-pale), 0 14px 26px -10px var(--shadow);
+    flex-wrap: wrap;
+  }
+  .profile-avatar{
+    width: 76px; height: 76px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Baloo 2', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 12px var(--shadow);
+    overflow: hidden;
+  }
+  .profile-avatar img{
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .profile-info{ flex: 1; min-width: 180px; }
+  .profile-name{
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 21px;
+    color: var(--pink-deep);
+    margin: 0 0 6px;
+  }
+  .profile-bio{
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+  .profile-links{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .profile-link{
+    font-family:'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--pink-deep);
+    text-decoration: none;
+    background: var(--bg-a);
+    border: 2px solid var(--pink-pale);
+    padding: 8px 14px;
+    border-radius: 999px;
+    transition: background 0.16s ease, border-color 0.16s ease;
+    white-space: nowrap;
+  }
+  .profile-link:hover{
+    background: var(--pink-pale);
+    border-color: var(--pink);
+  }
 </style>
 </head>
 <body>
@@ -332,12 +439,18 @@
 
 <header>
   <p class="eyebrow">✨ Character Archive</p>
-  <h1>내가 만든 <span class="sparkle">🎀</span><br>AI 캐릭터 모음</h1>
-  <p>카드를 콕 누르면 어느 플랫폼에서 대화할 수 있는지 알려줘요!</p>
-  <p class="count" id="countText"></p>
 </header>
 
+<div class="profile-wrap">
+  <div class="profile-card" id="profileCard"></div>
+</div>
+
 <main>
+  <div class="section-title-row">
+    <h2 class="section-title">제작한 캐릭터 <span class="sparkle">🎀</span></h2>
+    <p class="count" id="countText"></p>
+  </div>
+  <p class="section-desc">카드를 콕 누르면 어느 플랫폼에서 대화할 수 있는지 알려줘요!</p>
   <div class="grid" id="grid"></div>
 </main>
 
@@ -367,6 +480,8 @@
    - color       : 카드 아바타 동그라미 색 (예: "#FF7FA6")
                    핑크 톤과 잘 어울리는 색: #FF7FA6, #FFB6C1, #C9A0FF,
                    #FFA8CC, #FF9AA2, #B39DDB 등을 추천해요.
+   - image       : 사진 넣고 싶으면 파일명 입력 (예: "character1.jpg")
+                   사진이 있으면 이게 우선 표시되고, 없으면 이니셜/색이 표시돼요.
    - desc        : 짧은 소개 (한두 줄)
    - platforms   : 플레이 가능한 플랫폼 목록.
                    여러 개 넣을 수 있어요.
@@ -374,10 +489,24 @@
                    - url   : 그 플랫폼의 캐릭터 링크
    ================================================================ */
 
+/* -------- 내 프로필 수정은 여기서! -------- */
+const PROFILE = {
+  name: "이름을 적어주세요",
+  avatarText: "🩷",              // 이모지나 글자 아무거나 (아바타 안에 표시됨)
+  color: "#FF7FA6",              // 아바타 배경색
+  bio: "여기에 자기소개를 적어주세요. 취향, SNS 소개 등 자유롭게!",
+  image: "",                     // 사진 넣고 싶으면 파일명 입력 (예: "profile.jpg"), 없으면 빈칸 ""
+  links: [                       // 없으면 links: [] 로 비워두면 돼요
+    { label: "인스타그램", url: "https://instagram.com/아이디" },
+    { label: "트위터/X", url: "https://x.com/아이디" }
+  ]
+};
+
 const CHARACTERS = [
   {
     name: "예시 캐릭터",
     color: "#FF7FA6",
+    image: "",
     desc: "여기에 캐릭터 소개를 적어주세요. 성격, 세계관 등 자유롭게!",
     platforms: [
       { label: "제타 (Zeta)", url: "https://zeta.character.ai" },
@@ -387,6 +516,7 @@ const CHARACTERS = [
   {
     name: "두번째 캐릭터",
     color: "#C9A0FF",
+    image: "",
     desc: "이 블록을 복사해서 캐릭터를 계속 추가하세요.",
     platforms: [
       { label: "Character.AI", url: "https://character.ai" }
@@ -405,6 +535,32 @@ const countText = document.getElementById('countText');
 
 function initials(name){
   return name.trim().slice(0,1).toUpperCase();
+}
+
+function avatarInner(entity){
+  // image가 있으면 사진을, 없으면 이니셜 글자를 보여줘요
+  if(entity.image){
+    return `<img src="${entity.image}" alt="${entity.name || ''}">`;
+  }
+  return entity.avatarText || initials(entity.name || '?');
+}
+
+function renderProfile(){
+  const card = document.getElementById('profileCard');
+  if(!PROFILE){ card.style.display = 'none'; return; }
+
+  const linksHtml = (PROFILE.links || []).map(l =>
+    `<a class="profile-link" href="${l.url}" target="_blank" rel="noopener noreferrer">${l.label}</a>`
+  ).join('');
+
+  card.innerHTML = `
+    <div class="profile-avatar" style="background:${PROFILE.color || '#FF7FA6'}">${avatarInner(PROFILE)}</div>
+    <div class="profile-info">
+      <p class="profile-name">${PROFILE.name || ''}</p>
+      <p class="profile-bio">${PROFILE.bio || ''}</p>
+    </div>
+    ${linksHtml ? `<div class="profile-links">${linksHtml}</div>` : ''}
+  `;
 }
 
 function render(){
@@ -428,7 +584,7 @@ function render(){
 
     card.innerHTML = `
       <span class="card-no">No. ${String(i+1).padStart(3,'0')}</span>
-      <div class="avatar" style="background:${c.color || '#FF7FA6'}">${initials(c.name)}</div>
+      <div class="avatar" style="background:${c.color || '#FF7FA6'}">${avatarInner(c)}</div>
       <p class="card-name">${c.name}</p>
       <p class="card-desc">${c.desc || ''}</p>
       <div class="card-platform">
@@ -448,7 +604,7 @@ function render(){
 
 function openModal(c){
   document.getElementById('modalAvatar').style.background = c.color || '#FF7FA6';
-  document.getElementById('modalAvatar').textContent = initials(c.name);
+  document.getElementById('modalAvatar').innerHTML = avatarInner(c);
   document.getElementById('modalName').textContent = c.name;
   document.getElementById('modalDesc').textContent = c.desc || '';
 
@@ -480,6 +636,7 @@ closeBtn.addEventListener('click', closeModal);
 overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeModal(); });
 
+renderProfile();
 render();
 </script>
 
