@@ -137,7 +137,7 @@
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin-bottom: 34px;
+    margin-bottom: 26px;
     position: relative;
     z-index: 1;
   }
@@ -146,6 +146,49 @@
     border-radius: 50%;
     background: var(--pink);
     opacity: 0.5;
+  }
+
+  /* ---------- 🆕 플랫폼 필터 버튼 ---------- */
+  .filter-bar{
+    max-width: 1040px;
+    margin: 0 auto 28px;
+    padding: 0 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+  .filter-chip{
+    font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  }
+  .filter-chip .count{
+    margin-left: 4px;
+    font-size: 10.5px;
+    opacity: 0.75;
+  }
+  .filter-chip:hover{
+    border-color: var(--pink);
+    color: var(--pink-deep);
+  }
+  .filter-chip.active{
+    background: var(--pink);
+    border-color: var(--pink);
+    color: #fff;
+  }
+  .filter-chip:focus-visible{
+    outline: 2px solid var(--pink-deep);
+    outline-offset: 2px;
   }
 
   /* ---------- 카드 그리드 ---------- */
@@ -173,6 +216,11 @@
     display:flex;
     flex-direction: column;
     position: relative;
+    animation: cardIn 0.25s ease both;
+  }
+  @keyframes cardIn{
+    from{ opacity: 0; transform: translateY(6px); }
+    to{ opacity: 1; transform: translateY(0); }
   }
   .card:hover, .card:focus-visible{
     transform: translateY(-5px);
@@ -355,6 +403,9 @@
 
 <div class="dot-divider"><span></span><span></span><span></span></div>
 
+<!-- 🆕 플랫폼 필터 버튼 (자동으로 만들어져요) -->
+<div class="filter-bar" id="filterBar"></div>
+
 <main>
   <div class="grid" id="grid"></div>
 </main>
@@ -386,6 +437,10 @@
    - image   : 사진 파일명 (예: "character1.jpg"), 없으면 ""
    - desc    : 짧은 소개 (한두 줄)
    - platforms : 플레이 가능한 플랫폼 목록 (label, url)
+
+   💡 플랫폼 필터 버튼은 platforms 의 label 을 보고 자동으로 생겨요.
+   새 플랫폼을 추가해도 버튼이 알아서 늘어나요.
+   (단, label 철자를 똑같이 써야 같은 버튼으로 묶여요. 예: "BabeChat")
 
    ⚠️ 참고: 글자를 큰따옴표(" ") 안에 쓸 때는 중간에 엔터(줄바꿈)를
    치면 코드가 깨져요. 줄바꿈하고 싶으면 큰따옴표 대신 백틱(` `)을
@@ -562,9 +617,14 @@ const CHARACTERS = [
    아래부터는 화면을 그려주는 코드입니다. (수정 필요 없음)
    ================================================================ */
 
+const ALL_LABEL = "전체";   // 전체 버튼 글자 (원하면 "ALL" 등으로 바꿔도 돼요)
+
 const grid = document.getElementById('grid');
+const filterBar = document.getElementById('filterBar');
 const overlay = document.getElementById('overlay');
 const closeBtn = document.getElementById('closeBtn');
+
+let currentFilter = ALL_LABEL;
 
 function initials(name){
   return name.trim().slice(0,1).toUpperCase();
@@ -593,15 +653,56 @@ function renderProfile(){
   `;
 }
 
+/* 캐릭터 목록에서 플랫폼 이름을 모아 개수 세기 */
+function collectPlatforms(){
+  const counts = {};
+  const order = [];
+  CHARACTERS.forEach(c => {
+    const seen = new Set();
+    (c.platforms || []).forEach(p => {
+      if(seen.has(p.label)) return;
+      seen.add(p.label);
+      if(!(p.label in counts)){ counts[p.label] = 0; order.push(p.label); }
+      counts[p.label]++;
+    });
+  });
+  return { order, counts };
+}
+
+function renderFilters(){
+  const { order, counts } = collectPlatforms();
+  const items = [{ label: ALL_LABEL, count: CHARACTERS.length }]
+    .concat(order.map(l => ({ label: l, count: counts[l] })));
+
+  filterBar.innerHTML = '';
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip' + (item.label === currentFilter ? ' active' : '');
+    btn.type = 'button';
+    btn.setAttribute('aria-pressed', item.label === currentFilter ? 'true' : 'false');
+    btn.innerHTML = `${item.label}<span class="count">${item.count}</span>`;
+    btn.addEventListener('click', () => {
+      currentFilter = item.label;
+      renderFilters();
+      render();
+    });
+    filterBar.appendChild(btn);
+  });
+}
+
 function render(){
   grid.innerHTML = '';
 
-  if(CHARACTERS.length === 0){
+  const list = currentFilter === ALL_LABEL
+    ? CHARACTERS
+    : CHARACTERS.filter(c => (c.platforms || []).some(p => p.label === currentFilter));
+
+  if(list.length === 0){
     grid.innerHTML = '<div class="empty">아직 등록된 캐릭터가 없어요 ✦</div>';
     return;
   }
 
-  CHARACTERS.forEach((c) => {
+  list.forEach((c) => {
     const card = document.createElement('div');
     card.className = 'card';
     card.tabIndex = 0;
@@ -609,14 +710,20 @@ function render(){
     card.setAttribute('aria-label', c.name + ' 상세보기');
 
     const platformCount = c.platforms ? c.platforms.length : 0;
-    const firstPlatformLabel = platformCount > 0 ? c.platforms[0].label : '링크 없음';
+    let bottomLabel;
+    if(currentFilter !== ALL_LABEL){
+      bottomLabel = currentFilter;
+    } else {
+      const firstPlatformLabel = platformCount > 0 ? c.platforms[0].label : '링크 없음';
+      bottomLabel = platformCount > 1 ? firstPlatformLabel + ' 외 ' + (platformCount-1) : firstPlatformLabel;
+    }
 
     card.innerHTML = `
       <div class="card-photo">${photoInner(c)}</div>
       <p class="card-name">${c.name}</p>
       <p class="card-desc">${c.desc || ''}</p>
       <div class="card-platform">
-        <span>${platformCount > 1 ? firstPlatformLabel + ' 외 ' + (platformCount-1) : firstPlatformLabel}</span>
+        <span>${bottomLabel}</span>
         <span>→</span>
       </div>
     `;
@@ -642,7 +749,11 @@ function openModal(c){
   if(!c.platforms || c.platforms.length === 0){
     list.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);">등록된 플랫폼 링크가 없어요.</p>';
   } else {
-    c.platforms.forEach(p => {
+    /* 필터로 고른 플랫폼을 맨 위로 올려서 보여줌 */
+    const sorted = c.platforms.slice().sort((a, b) =>
+      (b.label === currentFilter) - (a.label === currentFilter)
+    );
+    sorted.forEach(p => {
       const a = document.createElement('a');
       a.className = 'platform-link';
       a.href = p.url;
@@ -665,6 +776,7 @@ overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal()
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeModal(); });
 
 renderProfile();
+renderFilters();
 render();
 </script>
 
